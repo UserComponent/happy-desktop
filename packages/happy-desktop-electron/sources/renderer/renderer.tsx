@@ -71,6 +71,7 @@ import {
     happyHtmlPreviewPartition,
     mediaPreviewView,
     type DesktopConfig,
+    type DesktopHardwareAcceleration,
     type DesktopGuestKeyEvent,
     type DesktopRuntimeSnapshot,
     type DesktopUpdateSnapshot,
@@ -967,7 +968,10 @@ if (mediaPreviewBridge) {
         for (const dispose of appDisposers.splice(0)) dispose();
     };
     window.addEventListener("unload", appDispose, { once: true });
-    const start = (config: DesktopConfig): void => {
+    const start = (
+        config: DesktopConfig,
+        hardwareAcceleration: DesktopHardwareAcceleration | undefined,
+    ): void => {
         const runtimeStore = desktopRuntimeStoreCreate(desktopBridge);
         // Whether this machine's owner has been welcomed. Acknowledging this
         // deck enters machine setup; it does not wait for machine work to finish.
@@ -1005,7 +1009,7 @@ if (mediaPreviewBridge) {
         // Appearance, title motion, and model choices share one durable desktop
         // document. The adapter keeps its current value synchronous so writes
         // from any product store preserve changes already made by the others.
-        const preferences = desktopPreferencesCreate(desktopBridge, config);
+        const preferences = desktopPreferencesCreate(desktopBridge, config, hardwareAcceleration);
         // Appearance is chosen for the window and shared by all connection UIs.
         shell ??= ((): DesktopShellStores => {
             const created = appearanceStoreCreate({
@@ -1347,15 +1351,28 @@ if (mediaPreviewBridge) {
             </DesktopAppearance>,
         );
     };
-    void desktopBridge.desktopConfigGet().then(start, (error: unknown) => {
-        console.error("Could not read desktop preferences.", error);
-        start({
-            appearance: "system",
-            defaultEffort: HAPPY_AGENT_DEFAULT_THINKING_LEVEL,
-            defaultPermissionMode: "auto",
-            modelPreferences: [],
-            scrollbarVisibility: "automatic",
-            version: 1,
-        });
-    });
+    // An older native host keeps no hardware-acceleration choice, and a failed
+    // read only withholds that one setting; neither may hold up the window.
+    const hardwareAcceleration: Promise<DesktopHardwareAcceleration | undefined> =
+        desktopBridge.hardwareAccelerationGet?.().catch((error: unknown) => {
+            console.error("Could not read the hardware acceleration choice.", error);
+            return undefined;
+        }) ?? Promise.resolve(undefined);
+    void desktopBridge.desktopConfigGet().then(
+        async (config) => start(config, await hardwareAcceleration),
+        async (error: unknown) => {
+            console.error("Could not read desktop preferences.", error);
+            start(
+                {
+                    appearance: "system",
+                    defaultEffort: HAPPY_AGENT_DEFAULT_THINKING_LEVEL,
+                    defaultPermissionMode: "auto",
+                    modelPreferences: [],
+                    scrollbarVisibility: "automatic",
+                    version: 1,
+                },
+                await hardwareAcceleration,
+            );
+        },
+    );
 }
