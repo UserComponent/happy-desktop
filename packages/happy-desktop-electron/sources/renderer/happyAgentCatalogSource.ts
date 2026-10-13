@@ -153,6 +153,13 @@ function catalogProject(
                 // a reason rather than keeping the last one it had.
                 ...(workspace.error === undefined ? {} : { error: workspace.error }),
                 ...gitProject(workspace.git),
+                ...(workspace.comparisonBase === undefined
+                    ? {}
+                    : { comparisonBase: workspace.comparisonBase }),
+                ...(workspace.createdFrom === undefined
+                    ? {}
+                    : { createdFrom: workspace.createdFrom }),
+                ...(workspace.upstream === undefined ? {} : { upstream: workspace.upstream }),
             });
             sessions.push(
                 ...workspace.sessions
@@ -269,8 +276,8 @@ function gitProject(
     "changesStatus" | "changedFiles" | "addedLines" | "deletedLines" | "changes" | "comparedWith"
 > {
     if (git === undefined) return { changesStatus: "loading" };
-    // Kept even when nothing could be compared, so the branch that led nowhere
-    // is still named.
+    // Kept even when nothing could be compared, so a comparison branch that
+    // led nowhere can still be seen and changed.
     const comparedWith = git.comparedWith === undefined ? {} : { comparedWith: git.comparedWith };
     if (git.comparison === "unavailable") return { changesStatus: "unavailable", ...comparedWith };
     return {
