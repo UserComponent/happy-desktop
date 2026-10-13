@@ -639,6 +639,16 @@ export interface HappyAgentWorktree {
     readonly changes?: readonly HappyAgentGitChangedFile[];
     /** What the changes are measured against; absent from a host that does not say. */
     readonly comparedWith?: HappyAgentGitComparedWith;
+    /**
+     * The comparison branch someone chose, as they typed it, or `null` to let
+     * the host choose. Absent from a host that cannot store one, which is also
+     * what says the choice cannot be changed.
+     */
+    readonly comparisonBase?: string | null;
+    /** The ref the worktree was created from. */
+    readonly createdFrom?: string;
+    /** The upstream its branch tracks. */
+    readonly upstream?: string;
 }
 
 /** One current working-tree change, reconciled from Git after each watcher hint. */

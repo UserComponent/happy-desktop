@@ -203,6 +203,10 @@ export {
 } from "./FileBrowser";
 export {
     GitComparisonBase,
+    GitComparisonBaseCard,
+    gitComparisonBaseOptions,
+    type GitComparisonBaseCardProps,
+    type GitComparisonBaseOption,
     type GitComparisonBaseProps,
     type GitComparisonBaseSource,
 } from "./GitComparisonBase";
