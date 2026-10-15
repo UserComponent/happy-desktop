@@ -11,7 +11,10 @@
 export interface HappyAgentSidebarVisibilitySnapshot {
     /** The sidebar, and the rail beside it, are folded away. */
     readonly hidden: boolean;
-    /** The width the reader dragged the sidebar to; Settings takes it too. */
+    /**
+     * The width the reader dragged the sidebar to; Settings takes it too. The
+     * host can keep it across launches through a width persistence.
+     */
     readonly width?: number;
 }
 
@@ -23,10 +26,37 @@ export interface HappyAgentSidebarVisibilityStore {
     sidebarWidthUpdate(width: number): void;
 }
 
+/** Where the host keeps the sidebar width between launches. */
+export interface HappyAgentSidebarWidthPersistence {
+    /** Whatever was stored; the store accepts only a sane width. */
+    read(): unknown;
+    write(width: number): void;
+}
+
+const WIDTH_MIN = 120;
+const WIDTH_MAX = 2000;
+
+function storedWidthRead(persistence: HappyAgentSidebarWidthPersistence | undefined) {
+    if (!persistence) return undefined;
+    try {
+        const value = persistence.read();
+        if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+        const width = Math.round(value);
+        return width >= WIDTH_MIN && width <= WIDTH_MAX ? width : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 const SHOWN: HappyAgentSidebarVisibilitySnapshot = { hidden: false };
 
-export function happyAgentSidebarVisibilityStoreCreate(): HappyAgentSidebarVisibilityStore {
-    let snapshot = SHOWN;
+export function happyAgentSidebarVisibilityStoreCreate(
+    persistence?: HappyAgentSidebarWidthPersistence,
+): HappyAgentSidebarVisibilityStore {
+    // Read now, not later: the shell takes its starting width once, at mount.
+    const storedWidth = storedWidthRead(persistence);
+    let snapshot: HappyAgentSidebarVisibilitySnapshot =
+        storedWidth === undefined ? SHOWN : { hidden: false, width: storedWidth };
     const listeners = new Set<() => void>();
     return {
         get: () => snapshot,
@@ -43,6 +73,11 @@ export function happyAgentSidebarVisibilityStoreCreate(): HappyAgentSidebarVisib
             if (snapshot.width === width) return;
             snapshot = { ...snapshot, width };
             for (const listener of listeners) listener();
+            try {
+                persistence?.write(width);
+            } catch {
+                // The width stays on screen for as long as this window is open.
+            }
         },
     };
 }

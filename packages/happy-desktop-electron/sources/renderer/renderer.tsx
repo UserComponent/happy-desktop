@@ -148,6 +148,7 @@ import { desktopGptLiveRuntimeCreate } from "./desktopGptLiveRuntime";
 import { desktopWelcomePersistence } from "./desktopWelcome";
 import { desktopNavigationOrderPersistence } from "./desktopNavigationOrder";
 import { desktopSidebarCollapsePersistence } from "./desktopSidebarCollapse";
+import { desktopSidebarWidthPersistence } from "./desktopSidebarWidth";
 import { DesktopBootGate, desktopBootSkip } from "./DesktopBootGate";
 import { desktopAnalyticsCreate } from "./desktopAnalytics";
 import { desktopAgentUpdateStoreCreate } from "./desktopAgentUpdateStore";
@@ -1234,7 +1235,9 @@ if (mediaPreviewBridge) {
         // Whether the window's left side — sidebar and connection rail — is
         // folded away. Also the window's own: switching machines does not
         // bring the sidebar back, and the rail beside it goes with it.
-        const sidebarVisibility = happyAgentSidebarVisibilityStoreCreate();
+        const sidebarVisibility = happyAgentSidebarVisibilityStoreCreate(
+            desktopSidebarWidthPersistence(),
+        );
         // What the sidebar's search field holds. Transient like the command
         // palette below: a search is a question in progress, not a place to
         // come back to, so nothing is persisted.
