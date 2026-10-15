@@ -25,6 +25,7 @@ import type {
     UsageAnalyticsStore,
     KeepAwakeStore,
     StatusBarStore,
+    SidePanelLayoutStore,
     HappyAgentFileTabKind,
     HappyAgentNavigationOrderStore,
     HappyAgentSidebarCollapseStore,
@@ -154,6 +155,8 @@ export interface HappyAgentRouterContext {
     readonly keepAwake?: KeepAwakeStore;
     /** Which optional controls the sidebar's status bar shows. */
     readonly statusBar?: StatusBarStore;
+    /** Whether the side panel's width and open state are per workspace or window-wide. */
+    readonly sidePanelLayout?: SidePanelLayoutStore;
     /** Window-local preference for animated activity titles. */
     readonly titleShimmer?: TitleShimmerStore;
     /**
@@ -825,6 +828,7 @@ function HappyAgentSettingsRoute() {
             {...(context.keepAwake ? { keepAwake: context.keepAwake } : {})}
             {...(context.statusBar ? { statusBar: context.statusBar } : {})}
             {...(context.attention ? { attention: context.attention } : {})}
+            {...(context.sidePanelLayout ? { sidePanelLayout: context.sidePanelLayout } : {})}
             onCategorySelect={(section) =>
                 void navigate({ params: { section }, to: "/settings/$section" })
             }

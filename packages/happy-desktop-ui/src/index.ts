@@ -893,6 +893,11 @@ export {
     type HappyAgentExperimentalSettingsProps,
 } from "./pages/settings/HappyAgentExperimentalSettings";
 export {
+    HappyAgentLayoutSettings,
+    type HappyAgentLayoutSettingsProps,
+    type HappyAgentSidePanelLayoutChoice,
+} from "./pages/settings/HappyAgentLayoutSettings";
+export {
     HappyAgentProductAnalyticsSettings,
     type HappyAgentProductAnalyticsSettingsProps,
 } from "./pages/settings/HappyAgentProductAnalyticsSettings";

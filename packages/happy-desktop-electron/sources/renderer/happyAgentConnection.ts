@@ -52,6 +52,7 @@ import {
     type TerminalColorScheme,
 } from "happy-desktop-state";
 import { imageCropOpen } from "happy-desktop-ui";
+import { desktopSidePanelLayoutStore } from "./desktopSidePanelLayout";
 import { desktopViewPreferencesPersistence } from "./desktopViewPreferences";
 import { desktopWelcomePersistence } from "./desktopWelcome";
 import {
@@ -504,6 +505,7 @@ export function happyAgentConnectionOpen(input: {
                 conversationRetention: happyAgentConversationRetentionFor(
                     (navigator as Navigator & { readonly deviceMemory?: number }).deviceMemory,
                 ),
+                sidePanelLayout: desktopSidePanelLayoutStore(),
                 output: (event) => {
                     switch (event.type) {
                         case "conversationOpenRequested":

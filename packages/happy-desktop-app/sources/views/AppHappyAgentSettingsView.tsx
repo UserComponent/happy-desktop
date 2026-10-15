@@ -24,6 +24,8 @@ import type {
     HappyAgentSidebarVisibilityStore,
     HappyAgentWindowStore,
     KeepAwakeStore,
+    SidePanelLayoutScope,
+    SidePanelLayoutStore,
     StatusBarStore,
     TitleShimmerStore,
     UsageAnalyticsStore,
@@ -58,6 +60,7 @@ import {
     happyAgentAttentionConnection,
     happyAgentAttentionStoreNoop,
     keepAwakeStoreCreate,
+    sidePanelLayoutStoreNoop,
     statusBarStoreNoop,
     titleShimmerStoreNoop,
 } from "happy-desktop-state";
@@ -374,6 +377,8 @@ export interface AppHappyAgentSettingsViewProps {
     /** When each connection chimes. Absent where the host plays no sound. */
     attention?: HappyAgentAttentionStore;
     statusBar?: StatusBarStore;
+    /** Whether the side panel's width and open state are per workspace or window-wide. */
+    sidePanelLayout?: SidePanelLayoutStore;
     /** The window's sidebar, whose width the category column matches. */
     sidebarVisibility?: HappyAgentSidebarVisibilityStore;
     /** Every Happy Agent in this window, including the one whose catalog is read. */
@@ -455,6 +460,12 @@ export function AppHappyAgentSettingsView(props: AppHappyAgentSettingsViewProps)
         attentionStore.subscribe,
         attentionStore.get,
         attentionStore.get,
+    );
+    const sidePanelLayoutStore = props.sidePanelLayout ?? sidePanelLayoutStoreNoop;
+    const sidePanelLayout = useSyncExternalStore(
+        sidePanelLayoutStore.subscribe,
+        sidePanelLayoutStore.get,
+        sidePanelLayoutStore.get,
     );
     const statusBarStore = props.statusBar ?? statusBarStoreNoop;
     const statusBar = useSyncExternalStore(
@@ -1195,6 +1206,27 @@ export function AppHappyAgentSettingsView(props: AppHappyAgentSettingsViewProps)
                                   ...statusBar,
                                   onThemeShownChange: statusBarStore.themeShownUpdate,
                                   onKeepAwakeShownChange: statusBarStore.keepAwakeShownUpdate,
+                              },
+                          }
+                        : {})}
+                    {...(props.sidePanelLayout
+                        ? {
+                              sidePanelLayout: {
+                                  scope: sidePanelLayout.scope,
+                                  onScopeChange: (scope: SidePanelLayoutScope) => {
+                                      // Window-wide scope starts from the panel as it is on screen.
+                                      const workspace = host?.session?.workspace;
+                                      const width = workspace?.get().panelWidth;
+                                      sidePanelLayoutStore.scopeUpdate(
+                                          scope,
+                                          workspace === undefined
+                                              ? undefined
+                                              : {
+                                                    ...(width === undefined ? {} : { width }),
+                                                    open: workspace.panel.get().open,
+                                                },
+                                      );
+                                  },
                               },
                           }
                         : {})}

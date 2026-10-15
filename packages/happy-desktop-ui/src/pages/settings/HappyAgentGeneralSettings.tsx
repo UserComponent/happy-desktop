@@ -9,6 +9,10 @@ import { Spinner } from "../../Spinner";
 import { SIDEBAR_THEME_OPTIONS } from "../../SidebarFooter";
 import { SIDEBAR_KEEP_AWAKE_OPTIONS, type SidebarKeepAwakeMode } from "../../SidebarKeepAwakeMenu";
 import { Switch } from "../../Switch";
+import {
+    HappyAgentLayoutSettings,
+    type HappyAgentSidePanelLayoutChoice,
+} from "./HappyAgentLayoutSettings";
 import { HappyAgentProductAnalyticsSettings } from "./HappyAgentProductAnalyticsSettings";
 import { HappyAgentSettingsSection } from "./HappyAgentSettingsShell";
 
@@ -44,6 +48,11 @@ export type HappyAgentGeneralSettingsProps = {
      */
     projectsHidden?: boolean;
     onProjectsHiddenChange?: (hidden: boolean) => void;
+    /** Whether the side panel is arranged per workspace or window-wide; absent where the host keeps no such choice. */
+    sidePanelLayout?: {
+        scope: HappyAgentSidePanelLayoutChoice;
+        onScopeChange: (scope: HappyAgentSidePanelLayoutChoice) => void;
+    };
     /** "Show in status bar" switches; absent where the host keeps no such choice. */
     statusBar?: {
         themeShown: boolean;
@@ -296,6 +305,12 @@ export function HappyAgentGeneralSettings(props: HappyAgentGeneralSettingsProps)
                         label="Completion sound"
                     />
                 </HappyAgentSettingsSection>
+            ) : null}
+            {props.sidePanelLayout ? (
+                <HappyAgentLayoutSettings
+                    onSidePanelLayoutChange={props.sidePanelLayout.onScopeChange}
+                    sidePanelLayout={props.sidePanelLayout.scope}
+                />
             ) : null}
             <HappyAgentSettingsSection
                 description="Where a web link goes when it is clicked. A link's own menu can always choose the other."

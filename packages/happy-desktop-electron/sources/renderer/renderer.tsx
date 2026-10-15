@@ -54,6 +54,7 @@ import {
     type ExperimentsStore,
     type ProjectsVisibilityStore,
     type StemCellAnimationStore,
+    type SidePanelLayoutStore,
     type StatusBarStore,
     type UsageAnalyticsStore,
     type GptLiveStore,
@@ -142,6 +143,7 @@ import { desktopDaemonStoreCreate } from "./desktopDaemonStore";
 import { desktopExperimentsPersistence } from "./desktopExperiments";
 import { desktopProjectsVisibilityPersistence } from "./desktopProjectsVisibility";
 import { desktopStemCellAnimationPersistence } from "./desktopStemCellAnimation";
+import { desktopSidePanelLayoutStore } from "./desktopSidePanelLayout";
 import { desktopStatusBarPersistence } from "./desktopStatusBar";
 import { desktopGptLivePersistence } from "./desktopGptLive";
 import { desktopGptLiveRuntimeCreate } from "./desktopGptLiveRuntime";
@@ -381,6 +383,7 @@ function HappyAgentBoundary(props: {
     projectsVisibility: ProjectsVisibilityStore;
     stemCellAnimation: StemCellAnimationStore;
     statusBar: StatusBarStore;
+    sidePanelLayout: SidePanelLayoutStore;
     keepAwake: KeepAwakeStore;
     platform: "desktop" | "web";
     gptLive: GptLiveStore;
@@ -435,6 +438,7 @@ function HappyAgentBoundary(props: {
                 projectsVisibility: props.projectsVisibility,
                 stemCellAnimation: props.stemCellAnimation,
                 statusBar: props.statusBar,
+                sidePanelLayout: props.sidePanelLayout,
                 gptLive: props.gptLive,
                 usageAnalytics: props.usageAnalytics,
                 keepAwake: props.keepAwake,
@@ -584,6 +588,7 @@ interface DesktopRendererProps {
     projectsVisibility: ProjectsVisibilityStore;
     stemCellAnimation: StemCellAnimationStore;
     statusBar: StatusBarStore;
+    sidePanelLayout: SidePanelLayoutStore;
     gptLive: GptLiveStore;
     usageAnalytics: UsageAnalyticsStore;
     keepAwake: KeepAwakeStore;
@@ -783,6 +788,7 @@ function DesktopScreens(props: DesktopRendererProps) {
                                     projectsVisibility={props.projectsVisibility}
                                     stemCellAnimation={props.stemCellAnimation}
                                     statusBar={props.statusBar}
+                                    sidePanelLayout={props.sidePanelLayout}
                                     gptLive={props.gptLive}
                                     usageAnalytics={props.usageAnalytics}
                                     keepAwake={props.keepAwake}
@@ -1010,6 +1016,7 @@ function DesktopRuntimeContent(
             projectsVisibility={props.projectsVisibility}
             stemCellAnimation={props.stemCellAnimation}
             statusBar={props.statusBar}
+            sidePanelLayout={props.sidePanelLayout}
             keepAwake={props.keepAwake}
             gptLive={props.gptLive}
             usageAnalytics={props.usageAnalytics}
@@ -1265,6 +1272,8 @@ if (mediaPreviewBridge) {
         );
         // Which optional controls the status bar shows: the window's own choice.
         const statusBar = statusBarStoreCreate(desktopStatusBarPersistence());
+        // Whether the side panel's width and open state are per workspace or window-wide.
+        const sidePanelLayout = desktopSidePanelLayoutStore();
         // Active-title motion is also this window's own choice. The store keeps
         // the product default in memory and writes only after the reader changes
         // the switch, so untouched installations follow future defaults.
@@ -1604,6 +1613,7 @@ if (mediaPreviewBridge) {
                         projectsVisibility={projectsVisibility}
                         stemCellAnimation={stemCellAnimation}
                         statusBar={statusBar}
+                        sidePanelLayout={sidePanelLayout}
                         gptLive={gptLive}
                         usageAnalytics={analytics.preference}
                         keepAwake={keepAwake}

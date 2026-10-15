@@ -21,6 +21,7 @@ export * from "./experiments/experimentsStore.js";
 export * from "./projectsVisibility/projectsVisibilityStore.js";
 export * from "./stemCellAnimation/stemCellAnimationStore.js";
 export * from "./statusBar/statusBarStore.js";
+export * from "./sidePanelLayout/sidePanelLayoutStore.js";
 export * from "./usageAnalytics/usageAnalyticsStore.js";
 export * from "./gptLive/gptLiveStore.js";
 export * from "./gptLive/gptLiveRuntime.js";

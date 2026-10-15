@@ -10,6 +10,10 @@ import type {
 } from "./happyAgentTypes.js";
 import type { HappyAgentPanelChatHandle, HappyAgentPanelChatStore } from "./happyAgentPanelChat.js";
 import type { HappyAgentPanelMemory } from "./happyAgentWorkspaceMemory.js";
+import type {
+    SidePanelLayoutScope,
+    SidePanelLayoutStore,
+} from "../sidePanelLayout/sidePanelLayoutStore.js";
 
 declare const happyAgentPanelTabIdBrand: unique symbol;
 
@@ -345,6 +349,14 @@ export interface HappyAgentPanelStore {
         terminalRefusal?: string,
     ): void;
 
+    /**
+     * Applies the window's panel layout. Like `scopeApply` it is authoritative
+     * input from the owner: in window-wide scope the panel shows the window's
+     * open state, and returning to per-workspace scope gives the addressed
+     * group back its own.
+     */
+    layoutApply(): void;
+
     [Symbol.dispose](): void;
 }
 
@@ -363,6 +375,8 @@ export interface HappyAgentPanelDeps {
     /** Which floaties were opened by hand, read once and written on every change. */
     readonly floatyMemoryRead?: () => readonly string[];
     readonly floatyMemoryWrite?: (keys: readonly string[]) => void;
+    /** The window's panel layout. Omitted, every group's open state is its own. */
+    readonly layout?: SidePanelLayoutStore;
 }
 
 interface Tab {
@@ -599,6 +613,15 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
         for (const listener of listeners) listener();
     };
 
+    const applicationScope = (): boolean => deps.layout?.get().scope === "application";
+    let layoutScopeSeen: SidePanelLayoutScope = deps.layout?.get().scope ?? "workspace";
+
+    /** Shows or hides the panel; in window-wide scope the window record follows. */
+    const openSet = (value: boolean): void => {
+        open = value;
+        if (applicationScope()) deps.layout?.openUpdate(value);
+    };
+
     /**
      * Writes the addressed group's arrangement down. Everything restorable is
      * derived from the tabs themselves, so there is no second copy of the panel
@@ -620,7 +643,12 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
         const selected = addressed ? activeViewId : activeByGroup.get(group);
         const activeIndex = browsers.findIndex(({ tab }) => tab.id === selected);
         deps.memoryWrite(group, {
-            open: addressed ? open : (chromeByGroup.get(group)?.open ?? false),
+            // Window-wide scope leaves each group's own state as it was.
+            open: applicationScope()
+                ? (chromeByGroup.get(group)?.open ?? false)
+                : addressed
+                  ? open
+                  : (chromeByGroup.get(group)?.open ?? false),
             browsers: browsers.map(({ tab, agentId, networkId }) => ({
                 url: tab.url ?? "about:blank",
                 label: tab.label,
@@ -724,7 +752,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
         tab.placement = "panel";
         activeByGroup.set(groupId, tab.id);
         activeViewId = tab.id;
-        open = true;
+        openSet(true);
         remember();
         recompute();
     };
@@ -802,7 +830,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
 
         panelToggle() {
             if (disposed) return;
-            open = !open;
+            openSet(!open);
             if (open && !filesViewShown && activeViewId === "files") landing();
             remember();
             recompute();
@@ -811,7 +839,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (disposed) return;
             filesViewShown = true;
             activeViewId = "files";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -825,7 +853,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
         artifactsSelect() {
             if (disposed) return;
             activeViewId = "artifacts";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -834,7 +862,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             activityViewShown = true;
             activityViewDismissed = false;
             activeViewId = "activity";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -865,7 +893,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (disposed || !conversationId) return;
             usageViewShown = true;
             activeViewId = "usage";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -883,7 +911,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (disposed || !groupId) return;
             devicesViewShown = true;
             activeViewId = "devices";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -900,7 +928,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             previewMediaIndex = mediaIndex;
             previewConversationId = conversationId;
             activeViewId = "preview";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -918,7 +946,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             changeViewPath = path;
             changeConversationId = conversationId;
             activeViewId = "change";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -934,7 +962,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (disposed) return;
             fileViewShown = true;
             activeViewId = "file";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -964,7 +992,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (artifactView?.artifactId !== artifactId || artifactView.version !== version)
                 artifactView = version === undefined ? { artifactId } : { artifactId, version };
             activeViewId = "artifact";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -1008,7 +1036,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
                     ? { artifactId: tab.artifactId }
                     : { artifactId: tab.artifactId, version };
             activeViewId = "artifact";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -1019,14 +1047,14 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
                 (tab) => tab.id === replacing && tab.kind === "browser" && tab.groupId === groupId,
             );
             if (replaced >= 0) tabs.splice(replaced, 1, tabs.pop()!);
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
         browserAdd(url) {
             if (disposed || !groupId || !conversationId) return;
             if (!browserTabAdd(groupId, conversationId, undefined, url)) return;
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -1034,7 +1062,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             if (disposed) return;
             if (group === groupId) {
                 if (!browserTabAdd(group, agent, network, url)) return;
-                open = true;
+                openSet(true);
                 remember();
                 recompute();
                 return;
@@ -1112,7 +1140,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
                 // so the panel shows it and opens if it was folded away.
                 activeByGroup.set(tab.groupId, tab.id);
                 activeViewId = tab.id;
-                open = true;
+                openSet(true);
             } else if (activeByGroup.get(tab.groupId) === tab.id) {
                 // Leaving hands the panel's selection back to whatever the panel
                 // still draws, and to Files when it draws nothing.
@@ -1154,7 +1182,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
                 return;
             }
             activeViewId = "files";
-            open = true;
+            openSet(true);
             remember();
             recompute();
         },
@@ -1185,7 +1213,7 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
                 recompute();
                 return;
             }
-            if (groupId) chromeByGroup.set(groupId, { open });
+            if (groupId && !applicationScope()) chromeByGroup.set(groupId, { open });
             groupId = nextGroupId;
             // A file was opened out of one checkout, and a path only means
             // something inside that checkout, so it does not travel to the next
@@ -1199,7 +1227,10 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             artifactView = undefined;
             if (nextGroupId) groupRestore(nextGroupId);
             const chrome = nextGroupId ? chromeByGroup.get(nextGroupId) : undefined;
-            open = chrome?.open ?? false;
+            open =
+                deps.layout && applicationScope()
+                    ? deps.layout.get().open
+                    : (chrome?.open ?? false);
             const remembered =
                 nextGroupId === undefined ? undefined : activeByGroup.get(nextGroupId);
             const drawn = tabs.find(
@@ -1208,10 +1239,25 @@ export function happyAgentPanelStoreCreate(deps: HappyAgentPanelDeps): HappyAgen
             activeViewId = drawn ?? "files";
             if (nextGroupId !== undefined && filesArrivalGroupId === nextGroupId) {
                 activeViewId = "files";
-                open = true;
+                openSet(true);
                 remember();
             }
             filesArrivalGroupId = undefined;
+            recompute();
+        },
+
+        layoutApply() {
+            if (disposed || !deps.layout) return;
+            const scope = deps.layout.get().scope;
+            if (scope === "application") {
+                // Leaving workspace scope: the group keeps what it showed.
+                if (layoutScopeSeen === "workspace" && groupId)
+                    chromeByGroup.set(groupId, { open });
+                open = deps.layout.get().open;
+            } else if (layoutScopeSeen === "application") {
+                open = groupId ? (chromeByGroup.get(groupId)?.open ?? false) : false;
+            }
+            layoutScopeSeen = scope;
             recompute();
         },
 

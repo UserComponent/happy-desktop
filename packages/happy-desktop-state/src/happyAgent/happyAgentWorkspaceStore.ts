@@ -29,6 +29,7 @@ import {
 } from "./happyAgentFileLink.js";
 import type { ConversationSummary } from "../conversation/conversationSummary.js";
 import type { Loadable } from "../conversation/loadable.js";
+import type { SidePanelLayoutStore } from "../sidePanelLayout/sidePanelLayoutStore.js";
 import { UserError } from "../types.js";
 import {
     composerStoreCreate,
@@ -1469,6 +1470,8 @@ export interface HappyAgentWorkspaceDeps {
      * `happyAgentConversationRetentionFor`. Omitted keeps none.
      */
     readonly conversationRetention?: HappyAgentConversationRetention;
+    /** The window's side panel layout; omitted, every workspace keeps its own width and open state. */
+    readonly sidePanelLayout?: SidePanelLayoutStore;
 }
 
 export interface HappyAgentWorkspaceNewChatInput {
@@ -2345,12 +2348,14 @@ export function happyAgentWorkspaceStoreCreate(
         memoryWrite: (groupId, memory) => client.memory.groupPanelWrite(groupId, memory),
         floatyMemoryRead: () => client.memory.floatyOpenedRead(),
         floatyMemoryWrite: (keys) => client.memory.floatyOpenedWrite(keys),
+        ...(deps.sidePanelLayout === undefined ? {} : { layout: deps.sidePanelLayout }),
     });
 
     const listeners = new Set<() => void>();
     let active = false;
     let disposed = false;
     let unsubscribeList: (() => void) | undefined;
+    let unsubscribeSidePanelLayout: (() => void) | undefined;
     let unsubscribeWorkspaceFiles: (() => void) | undefined;
     let unsubscribeModels: (() => void) | undefined;
     /** True while the drafts re-derive from a catalog the daemon changed, which nobody chose. */
@@ -3166,7 +3171,10 @@ export function happyAgentWorkspaceStoreCreate(
             nextFileScope === "all"
                 ? "tree"
                 : (nextView.fileLayout ?? HAPPY_AGENT_FILE_LAYOUT_DEFAULT);
-        const nextPanelWidth = nextView.panelWidth;
+        const nextPanelWidth =
+            deps.sidePanelLayout?.get().scope === "application"
+                ? deps.sidePanelLayout.get().width
+                : nextView.panelWidth;
         // Recomputed here rather than remembered: it is derived from the same
         // list snapshot this projection is built from, so it cannot lag behind
         // the rows it describes. The panel is told too, since a shell is started
@@ -6603,6 +6611,12 @@ export function happyAgentWorkspaceStoreCreate(
 
     const start = (): void => {
         active = true;
+        // The scope can change while this surface is off screen, e.g. in Settings.
+        panel.layoutApply();
+        unsubscribeSidePanelLayout = deps.sidePanelLayout?.subscribe(() => {
+            panel.layoutApply();
+            recompute();
+        });
         const reconcileFileDocuments = fileDocumentsReconcileOnStart;
         fileDocumentsReconcileOnStart = false;
         if (reconcileFileDocuments) {
@@ -6665,6 +6679,8 @@ export function happyAgentWorkspaceStoreCreate(
 
     const stop = (): void => {
         active = false;
+        unsubscribeSidePanelLayout?.();
+        unsubscribeSidePanelLayout = undefined;
         acquisitionGeneration += 1;
         acquiringId = undefined;
         unsubscribeList?.();
@@ -7951,6 +7967,11 @@ export function happyAgentWorkspaceStoreCreate(
         },
         panelWidthUpdate(groupId, width) {
             const next = Math.round(width);
+            if (deps.sidePanelLayout?.get().scope === "application") {
+                deps.sidePanelLayout.widthUpdate(next);
+                recompute();
+                return;
+            }
             if (!Number.isFinite(next) || groupView(groupId).panelWidth === next) return;
             viewPreferencesWrite(groupId, { panelWidth: next });
             recompute();
