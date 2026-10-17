@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Badge, type BadgeVariant } from "../../Badge";
 import { Banner } from "../../Banner";
 import { Box } from "../../Box";
@@ -5,6 +6,7 @@ import { EmptyState } from "../../EmptyState";
 import { Icon } from "../../Icon";
 import { Spinner } from "../../Spinner";
 import { Switch } from "../../Switch";
+import { Octicon } from "../../vectorIcons/VectorIcon";
 import { HappyAgentSettingsSection } from "./HappyAgentSettingsShell";
 
 /** Why a provider is or is not usable, straight from the daemon's catalog. */
@@ -28,6 +30,8 @@ export interface HappyAgentProviderRow {
     readonly id: string;
     /** Service identity shown separately from the account's friendly name. */
     readonly typeName?: string;
+    /** The provider's configured type, shared by every account of one service. */
+    readonly type: string;
     readonly name: string;
     readonly status: HappyAgentProviderStatus;
     /** Whether the machine will use this provider at all. */
@@ -70,6 +74,20 @@ const STATUS_VARIANTS: Record<HappyAgentProviderStatus, BadgeVariant> = {
 const STATUS_HINTS: Partial<Record<HappyAgentProviderStatus, string>> = {
     not_authenticated: "Sign this provider in from Happy Agent to use its models.",
     not_enabled: "Switched off on this machine, so no agent here may use it.",
+};
+
+/**
+ * What a person must do outside Happy before one service's models work, keyed by
+ * the provider type the daemon configured. Shown on the card whatever its status,
+ * because the daemon reports no sign-in state for these services.
+ */
+const SERVICE_NOTES: Readonly<Record<string, readonly ReactNode[]>> = {
+    copilot: [
+        <>
+            Run <code>copilot login</code> in a terminal.
+        </>,
+        "Business or Enterprise: your organization must turn on the Copilot CLI policy.",
+    ],
 };
 
 /**
@@ -130,7 +148,11 @@ export function HappyAgentProviderSettings(props: HappyAgentProviderSettingsProp
                                     className="happy-agent-provider__glyph"
                                     data-happy-desktop-ui="happy-agent-provider-glyph"
                                 >
-                                    <Icon name="globe" size={16} />
+                                    {provider.type === "copilot" ? (
+                                        <Octicon name="copilot" size={16} />
+                                    ) : (
+                                        <Icon name="globe" size={16} />
+                                    )}
                                 </span>
                                 <Box className="happy-agent-provider__naming">
                                     <span
@@ -210,6 +232,15 @@ export function HappyAgentProviderSettings(props: HappyAgentProviderSettingsProp
                                 </span>
                             ) : null}
                         </Box>
+                        {SERVICE_NOTES[provider.type]?.map((note, index) => (
+                            <p
+                                className="happy-agent-provider__hint"
+                                data-happy-desktop-ui="happy-agent-provider-note"
+                                key={index}
+                            >
+                                {note}
+                            </p>
+                        ))}
                         {STATUS_HINTS[provider.status] ? (
                             <p
                                 className="happy-agent-provider__hint"

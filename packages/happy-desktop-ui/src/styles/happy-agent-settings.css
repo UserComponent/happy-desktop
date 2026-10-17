@@ -246,6 +246,11 @@
     line-height: 16px;
 }
 
+.happy-agent-provider__hint code {
+    color: var(--text);
+    font-family: var(--happy-font-mono);
+}
+
 .happy-agent-provider__naming {
     display: flex;
     flex-direction: column;

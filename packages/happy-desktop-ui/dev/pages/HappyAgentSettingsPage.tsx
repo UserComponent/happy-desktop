@@ -367,6 +367,7 @@ const providers: readonly HappyAgentProviderRow[] = [
     {
         enabled: true,
         id: "codex",
+        type: "codex",
         models: [
             {
                 contextWindow: 400_000,
@@ -403,6 +404,7 @@ const providers: readonly HappyAgentProviderRow[] = [
     {
         enabled: true,
         id: "claude",
+        type: "claude",
         models: [
             {
                 contextWindow: 1_000_000,
@@ -431,6 +433,7 @@ const providers: readonly HappyAgentProviderRow[] = [
     {
         enabled: true,
         id: "bedrock",
+        type: "bedrock",
         models: [
             {
                 contextWindow: 200_000,
@@ -450,10 +453,39 @@ const providers: readonly HappyAgentProviderRow[] = [
     {
         enabled: false,
         id: "vertex",
+        type: "vertex",
         models: [],
         name: "Vertex",
         serviceTiers: [],
         status: "not_enabled",
+    },
+    {
+        enabled: true,
+        id: "copilot",
+        type: "copilot",
+        models: [
+            {
+                contextWindow: 400_000,
+                efforts: ["Low", "Medium", "High"],
+                enabled: true,
+                id: "copilot:openai/gpt-5.4",
+                isDefault: false,
+                modelId: "openai/gpt-5.4",
+                name: "GPT-5.4",
+            },
+            {
+                contextWindow: 400_000,
+                efforts: ["Medium", "High"],
+                enabled: true,
+                id: "copilot:openai/gpt-6-luna",
+                isDefault: false,
+                modelId: "openai/gpt-6-luna",
+                name: "GPT-6 Luna",
+            },
+        ],
+        name: "GitHub Copilot",
+        serviceTiers: [],
+        status: "ready",
     },
 ];
 

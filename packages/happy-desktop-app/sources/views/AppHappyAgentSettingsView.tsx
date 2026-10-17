@@ -84,6 +84,7 @@ import {
     HappyAgentStateSettings,
     HappyAgentUsageSettings,
     providerAccountName,
+    providerServiceName,
     type HappyAgentProviderRow,
     type HappyAgentSecretRow,
     type HappyAgentSettingsCategory,
@@ -1658,6 +1659,7 @@ function providerRows(
     return providers.map((provider) => ({
         enabled: provider.enabled,
         id: provider.id,
+        type: provider.type,
         models: provider.models.map((model) => ({
             contextWindow: model.contextWindow,
             efforts: model.thinkingLevels.map(happyAgentThinkingLabel),
@@ -1668,7 +1670,7 @@ function providerRows(
             name: model.name,
         })),
         name: providerAccountName(provider.id, provider.name),
-        typeName: happyAgentServiceName(provider.type),
+        typeName: providerServiceName(provider.type),
         saving: provider.saving,
         serviceTiers: [
             ...new Set(
