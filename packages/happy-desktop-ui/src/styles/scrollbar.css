@@ -51,7 +51,9 @@
     --happy-scrollbar-color: var(--happy-scrollbar-interaction-color);
 }
 
-/* The composer is the sole always-visible exception in Automatic mode. */
+/* The composer and the model list are the always-visible exceptions in Automatic
+   mode. The model list is a long menu whose last rows sit out of sight, so a
+   resting thumb is what tells the reader it scrolls. */
 [data-scrollbar-host][data-scrollbar-always] {
     --happy-scrollbar-color: var(--happy-scrollbar-quiet-color);
 }

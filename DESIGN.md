@@ -349,7 +349,9 @@ Every scrolling surface uses the shared scrollbar. Its pointer track is always
 - Text inputs — the composer and multiline text fields — are the exception:
   they always reserve the 8px lane beside their text, so a thumb never covers
   what is typed and text never rewraps when overflow begins. The composer also
-  keeps an overflowing thumb visible in either appearance mode.
+  keeps an overflowing thumb visible in either appearance mode, and so does the
+  composer's model list, whose later rows would otherwise sit out of sight with
+  nothing to say that it scrolls.
 
 The browser remains responsible for scrolling, momentum, selection, and scroll
 position. Happy hides only its chrome and paints a shared DOM track because
