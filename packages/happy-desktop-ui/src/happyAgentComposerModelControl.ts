@@ -1,6 +1,5 @@
 import {
     happyAgentChiefOfStaffRequestText,
-    happyAgentServiceName,
     type HappyAgentChiefOfStaffRequest,
     type HappyAgentMenusSnapshot,
     type HappyAgentModelOption,
@@ -24,6 +23,7 @@ import type {
     ComposerModelUsageWindow,
 } from "./ComposerModelControl";
 import { localDayTime } from "./localTime";
+import { providerServiceName } from "./pages/settings/providerServiceName";
 
 function choiceOf(option: HappyAgentModelOption): ComposerModelChoice {
     return {
@@ -95,7 +95,7 @@ export function happyAgentComposerModelControlProps(
         if (service === undefined) {
             service = {
                 id: option.providerType,
-                label: happyAgentServiceName(option.providerType),
+                label: providerServiceName(option.providerType),
                 account: option.providerId,
                 accounts: [],
             };

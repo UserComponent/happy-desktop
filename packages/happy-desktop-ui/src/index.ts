@@ -1001,6 +1001,7 @@ export {
     type HappyAgentUsageProviderRow,
 } from "./pages/settings/HappyAgentUsageSettings";
 export { providerAccountName } from "./pages/settings/providerAccountName";
+export { providerServiceName } from "./pages/settings/providerServiceName";
 export { ConnectionShell, type ConnectionShellItem } from "./ConnectionShell";
 export { ConnectionSurface } from "./ConnectionSurface";
 export {
