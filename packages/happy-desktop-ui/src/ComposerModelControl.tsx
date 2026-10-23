@@ -13,6 +13,7 @@ import { Icon } from "./Icon";
 import { ScrollArea } from "./Scrollbar";
 import { Tooltip } from "./Tooltip";
 import { UsageRing, usageRingTone } from "./UsageRing";
+import { usageCreditsText } from "./usageCreditsText";
 import { Octicon } from "./vectorIcons/VectorIcon";
 
 export type ComposerModelEffort = {
@@ -48,6 +49,16 @@ export type ComposerModelAccountUsage = {
     week?: ComposerModelUsageWindow;
     /** The short session window, such as five hours, shown beneath the week. */
     session?: ComposerModelUsageWindow;
+    /** The monthly window, for a service that reports a monthly allowance instead of a week. */
+    month?: ComposerModelUsageWindow;
+    /** Additional spending the service reports, separate from the included windows. */
+    credits?: {
+        available: boolean;
+        /** No personal spending cap, not free organization-wide billing. */
+        unlimited: boolean;
+        remainingCents?: number;
+        usedPercent?: number;
+    };
     /** When the account was last read successfully, in milliseconds. */
     updatedAt?: number;
     /** The account is being read now. */
@@ -383,7 +394,7 @@ function UsageGauge(props: {
  */
 export function ComposerModelAccountGauge(props: { usage: ComposerModelAccountUsage | undefined }) {
     const usage = props.usage;
-    const window = usage?.week ?? usage?.session;
+    const window = usage?.week ?? usage?.session ?? usage?.month;
     if (usage === undefined || window === undefined) return null;
     return (
         <UsageGauge
@@ -410,7 +421,9 @@ export function ComposerModelAccountUsageDetails(props: {
         <div className="happy-composer-model-control__usage">
             {usage?.week ? <UsageLine primary window={usage.week} /> : null}
             {usage?.session ? <UsageLine window={usage.session} /> : null}
-            {usage?.week || usage?.session ? null : (
+            {usage?.month ? <UsageLine primary={!usage.week} window={usage.month} /> : null}
+            {usage?.credits ? <UsageCredits credits={usage.credits} /> : null}
+            {usage?.week || usage?.session || usage?.month || usage?.credits ? null : (
                 <span
                     className="happy-composer-model-control__usage-unknown"
                     data-happy-desktop-ui="composer-model-control-usage-unknown"
@@ -474,6 +487,37 @@ function UsageLine(props: { window: ComposerModelUsageWindow; primary?: boolean 
     );
 }
 
+/**
+ * The account's additional spending, apart from its included windows. A share
+ * is drawn only when the service reports one and the account has a cap; an
+ * uncapped account is said to have no personal spending cap, never zero used.
+ */
+function UsageCredits(props: { credits: NonNullable<ComposerModelAccountUsage["credits"]> }) {
+    const credits = props.credits;
+    const window =
+        credits.usedPercent !== undefined && !credits.unlimited
+            ? { label: "Credits", usedPercent: credits.usedPercent }
+            : undefined;
+    return (
+        <div
+            className="happy-composer-model-control__usage-window"
+            data-happy-desktop-ui="composer-model-control-credits"
+        >
+            <span className="happy-composer-model-control__usage-label">Credits</span>
+            <span className="happy-composer-model-control__usage-resets">
+                {usageCreditsText(credits.available, credits.unlimited, credits.remainingCents)}
+            </span>
+            {window ? (
+                <UsageGauge
+                    blocked={false}
+                    text={`${String(usageLeft(window))}% left`}
+                    window={window}
+                />
+            ) : null}
+        </div>
+    );
+}
+
 /** A reading this much older than its account's newest window says when it is from. */
 const USAGE_WINDOW_STALE_MS = 10 * 60_000;
 
@@ -503,7 +547,7 @@ function usageAge(at: number, now: number) {
  */
 function UsageFreshness(props: { usage: ComposerModelAccountUsage; now: number }) {
     const { usage, now } = props;
-    const windows = [usage.week, usage.session].filter(
+    const windows = [usage.week, usage.session, usage.month].filter(
         (window): window is ComposerModelUsageWindow => window !== undefined,
     );
     const newest = Math.max(

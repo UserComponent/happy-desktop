@@ -10,6 +10,7 @@ import { Banner } from "../../Banner";
 import { EmptyState } from "../../EmptyState";
 import type { UsageWindowTone } from "../../usageTone";
 import { usagePercentClamp, usageWindowTone } from "../../usageTone";
+import { usageCreditsText } from "../../usageCreditsText";
 import { Ionicon } from "../../vectorIcons/VectorIcon";
 import { providerAccountName } from "./providerAccountName";
 import { HappyAgentSettingsSection } from "./HappyAgentSettingsShell";
@@ -285,7 +286,7 @@ function ProviderSection(props: {
                                         Credits
                                     </span>
                                     <span className="happy-agent-usage-settings__credits-value">
-                                        {creditsText(
+                                        {usageCreditsText(
                                             usage.credits.available,
                                             usage.credits.unlimited,
                                             usage.credits.remainingCents,
@@ -503,17 +504,6 @@ function resetTimeRemaining(resetsAt: number, currentTime: number): string {
     const days = Math.floor(remainingHours / 24);
     const hours = remainingHours % 24;
     return `resets in ${String(days)}d${hours === 0 ? "" : ` ${String(hours)}h`}`;
-}
-
-function creditsText(
-    available: boolean,
-    unlimited: boolean,
-    remainingCents: number | undefined,
-): string {
-    if (unlimited) return "Unlimited";
-    if (!available) return "None left";
-    if (remainingCents === undefined) return "Available";
-    return `$${(remainingCents / 100).toFixed(2)} left`;
 }
 
 /** How many accounts are listed, and how many of them are already spent. */

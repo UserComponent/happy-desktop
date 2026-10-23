@@ -216,6 +216,8 @@ export function happyAgentComposerModelUsageProject(
             reading !== undefined &&
             (reading.fiveHour !== undefined ||
                 reading.weekly !== undefined ||
+                reading.monthly !== undefined ||
+                reading.credits !== undefined ||
                 reading.planName !== undefined);
         // A daemon before protocol 29 says when its reading was taken, not
         // when the account was last read; that is the closest it can tell.
@@ -228,10 +230,13 @@ export function happyAgentComposerModelUsageProject(
         const session = hasPlan
             ? usageWindow("Session", reading.fiveHour, blocking, now)
             : undefined;
+        const month = hasPlan ? usageWindow("Month", reading.monthly, blocking, now) : undefined;
         const limitResets = limitResetsAt(blocking);
         usage.set(entry.providerId, {
             ...(week === undefined ? {} : { week }),
             ...(session === undefined ? {} : { session }),
+            ...(month === undefined ? {} : { month }),
+            ...(hasPlan && reading.credits !== undefined ? { credits: reading.credits } : {}),
             ...(updatedAt === undefined ? {} : { updatedAt }),
             ...(entry.refreshing ? { refreshing: true } : {}),
             ...(refreshError === undefined ? {} : { refreshError }),

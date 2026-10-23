@@ -459,6 +459,49 @@ const LONG_ACCOUNT_SERVICES: readonly ComposerModelService[] = SERVICES.map((ser
 );
 const OPUS_LONG_ACCOUNT: ComposerModelSelection = { ...OPUS_MEDIUM, account: LONG_ACCOUNT };
 
+/* GitHub Copilot: a monthly allowance, with and without a personal spending cap. */
+const MONTHLY_SERVICES: readonly ComposerModelService[] = [
+    {
+        id: "copilot",
+        label: "GitHub Copilot",
+        account: "copilot",
+        accounts: [
+            { id: "copilot", label: "copilot", default: true, models: CODEX_MODELS },
+            { id: "copilot_capped", label: "copilot_capped", models: CODEX_MODELS },
+        ],
+    },
+];
+const MONTHLY_USAGE = heldUsage(
+    new Map<string, ComposerModelAccountUsage>([
+        [
+            "copilot",
+            {
+                month: { label: "Month", usedPercent: 12, resets: "resets Nov 1" },
+                credits: { available: true, unlimited: true },
+                updatedAt: NOW - 2 * MINUTE,
+            },
+        ],
+        [
+            "copilot_capped",
+            {
+                month: { label: "Month", usedPercent: 64, resets: "resets Nov 1" },
+                credits: {
+                    available: true,
+                    unlimited: false,
+                    remainingCents: 1250,
+                    usedPercent: 37.5,
+                },
+                updatedAt: NOW - 2 * MINUTE,
+            },
+        ],
+    ]),
+);
+const COPILOT_SELECTION = {
+    service: "copilot",
+    account: "copilot",
+    model: "gpt-6-astra",
+    effort: "xhigh",
+} as const;
 export function ComposerModelControlPage() {
     const [configured, configuredSet] = useState(false);
     const [selection, selectionSet] = useState(ASTRA);
@@ -869,6 +912,34 @@ export function ComposerModelControlPage() {
                     preview={{ accounts: "claude", accountHover: "claude" }}
                     selection={OPUS_MEDIUM}
                     usageWatch={claudeNeverRead}
+                    width={1140}
+                />
+            </Specimen>
+            <Specimen
+                number="29"
+                label="Monthly allowance and capped credits"
+                detail="A service that reports a month instead of a week shows its month in the row and below it. A personal spending cap is its own Credits line with what is left, apart from the allowance. Neither a session nor a week is invented."
+                stage="surface"
+            >
+                <Open
+                    preview={{ accounts: "copilot", accountHover: "copilot_capped" }}
+                    selection={{ ...COPILOT_SELECTION, account: "copilot_capped" }}
+                    services={MONTHLY_SERVICES}
+                    usageWatch={MONTHLY_USAGE}
+                    width={1140}
+                />
+            </Specimen>
+            <Specimen
+                number="30"
+                label="No personal spending cap"
+                detail="An account without a cap says so in words. It has no made-up zero and no ring; this describes the user's own cap, not the organization's bill."
+                stage="surface"
+            >
+                <Open
+                    preview={{ accounts: "copilot", accountHover: "copilot" }}
+                    selection={COPILOT_SELECTION}
+                    services={MONTHLY_SERVICES}
+                    usageWatch={MONTHLY_USAGE}
                     width={1140}
                 />
             </Specimen>
